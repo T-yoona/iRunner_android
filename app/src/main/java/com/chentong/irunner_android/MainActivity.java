@@ -1,5 +1,6 @@
 package com.chentong.irunner_android;
 
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.os.Bundle;
@@ -78,7 +79,7 @@ public class MainActivity extends AppCompatActivity implements AMapLocationListe
         myLocationStyle.myLocationType(MyLocationStyle.LOCATION_TYPE_MAP_ROTATE);//连续定位、且将视角移动到地图中心点，地图依照设备方向旋转，定位点会跟随设备移动。（1秒1次定位）
         aMap.setMyLocationEnabled(true);// 设置为true表示启动显示定位蓝点，false表示隐藏定位蓝点并不进行定位，默认是false。
         //显示级别
-        aMap.moveCamera(CameraUpdateFactory.zoomTo(20));
+        aMap.moveCamera(CameraUpdateFactory.zoomTo(18));
 
         //开始、结束按钮
         Button startButton = findViewById(R.id.startButton);
@@ -143,15 +144,27 @@ public class MainActivity extends AppCompatActivity implements AMapLocationListe
 
     public void startRunning() {
         isRunning = true;
-        startTime = System.currentTimeMillis();
+        totalDistance = 0f; // 重置距离
+        trackPoints.clear(); // 清空轨迹
+        startTime = System.currentTimeMillis();//重置计时器
         startLocation();
     }
 
     public void stopRunning() {
         isRunning = false;
         long totalTime = System.currentTimeMillis() - startTime;
+        // 存储跑步记录
+        Runrecord record = new Runrecord(totalDistance, totalTime);
+        new Thread(() -> {
+            AppDatabase db = AppDatabase.getInstance(getApplicationContext());
+            db.runRecordDao().insert(record);
+        }).start();
         // 显示成就
         Toast.makeText(this, "跑步距离: " + totalDistance + "米\n时间: " + (totalTime / 1000) + "秒", Toast.LENGTH_LONG).show();
+
+        // 启动跑步统计页面
+        Intent intent = new Intent(this, run.class);
+        startActivity(intent);
     }
 
 
